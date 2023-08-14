@@ -12,86 +12,107 @@
 package golexoffice
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"time"
 )
+
+const DateFormat = "2006-01-02T15:04:05.000-07:00"
+
+type Date time.Time
+
+func (t *Date) UnmarshalJSON(b []byte) error {
+	b = bytes.Trim(b, "\"")
+	tt, err := time.Parse(DateFormat, string(b))
+	if err != nil {
+		return err
+	}
+	*t = Date(tt)
+	return nil
+}
+
+func (t Date) MarshalJSON() ([]byte, error) {
+	return fmt.Appendf(nil, "\"%s\"", time.Time(t).Format(DateFormat)), nil
+}
 
 // InvoiceBody is to define body data
 type InvoiceBody struct {
-	Id                 string                        `json:"id"`
-	OrganizationId     string                        `json:"organizationId"`
-	CreateDate         string                        `json:"createDate"`
-	UpdatedDate        string                        `json:"updatedDate"`
-	Version            int                           `json:"version"`
-	Archived           bool                          `json:"archived"`
-	VoucherStatus      string                        `json:"voucherStatus"`
-	VoucherNumber      string                        `json:"voucherNumber"`
-	VoucherDate        string                        `json:"voucherDate"`
-	DueDate            interface{}                   `json:"dueDate"`
-	Address            InvoiceBodyAddress            `json:"address"`
-	LineItems          []InvoiceBodyLineItems        `json:"lineItems"`
-	TotalPrice         InvoiceBodyTotalPrice         `json:"totalPrice"`
-	TaxAmounts         []InvoiceBodyTaxAmounts       `json:"taxAmounts"`
-	TaxConditions      InvoiceBodyTaxConditions      `json:"taxConditions"`
-	PaymentConditions  InvoiceBodyPaymentConditions  `json:"paymentConditions"`
-	ShippingConditions InvoiceBodyShippingConditions `json:"shippingConditions"`
-	Title              string                        `json:"title"`
-	Introduction       string                        `json:"introduction"`
-	Remark             string                        `json:"remark"`
+	ID                 string                        `json:"id,omitempty"`
+	OrganizationID     string                        `json:"organizationId,omitempty"`
+	CreateDate         Date                          `json:"createDate,omitempty"`
+	UpdatedDate        Date                          `json:"updatedDate,omitempty"`
+	Version            int                           `json:"version,omitempty"`
+	Archived           bool                          `json:"archived,omitempty"`
+	VoucherStatus      string                        `json:"voucherStatus,omitempty"`
+	VoucherNumber      string                        `json:"voucherNumber,omitempty"`
+	VoucherDate        Date                          `json:"voucherDate,omitempty"`
+	DueDate            Date                          `json:"dueDate,omitempty"`
+	Address            InvoiceBodyAddress            `json:"address,omitempty"`
+	LineItems          []InvoiceBodyLineItems        `json:"lineItems,omitempty"`
+	TotalPrice         InvoiceBodyTotalPrice         `json:"totalPrice,omitempty"`
+	TaxAmounts         []InvoiceBodyTaxAmounts       `json:"taxAmounts,omitempty"`
+	TaxConditions      InvoiceBodyTaxConditions      `json:"taxConditions,omitempty"`
+	PaymentConditions  InvoiceBodyPaymentConditions  `json:"paymentConditions,omitempty"`
+	ShippingConditions InvoiceBodyShippingConditions `json:"shippingConditions,omitempty"`
+	Title              string                        `json:"title,omitempty"`
+	Introduction       string                        `json:"introduction,omitempty"`
+	Remark             string                        `json:"remark,omitempty"`
 }
 
 type InvoiceBodyAddress struct {
-	ContactId   string `json:"contactId"`
-	Name        string `json:"name"`
-	Supplement  string `json:"supplement"`
-	Street      string `json:"street"`
-	City        string `json:"city"`
-	Zip         string `json:"zip"`
-	CountryCode string `json:"countryCode"`
+	ContactID   string `json:"contactId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Supplement  string `json:"supplement,omitempty"`
+	Street      string `json:"street,omitempty"`
+	City        string `json:"city,omitempty"`
+	Zip         string `json:"zip,omitempty"`
+	CountryCode string `json:"countryCode,omitempty"`
 }
 
 type InvoiceBodyLineItems struct {
 	Id                 string               `json:"id,omitempty"`
-	Type               string               `json:"type"`
-	Name               string               `json:"name"`
-	Description        string               `json:"description"`
-	Quantity           float64              `json:"quantity"`
-	UnitName           string               `json:"unitName"`
-	UnitPrice          InvoiceBodyUnitPrice `json:"unitPrice"`
-	DiscountPercentage int                  `json:"discountPercentage"`
-	LineItemAmount     float64              `json:"lineItemAmount"`
+	Type               string               `json:"type,omitempty"`
+	Name               string               `json:"name,omitempty"`
+	Description        string               `json:"description,omitempty"`
+	Quantity           float64              `json:"quantity,omitempty"`
+	UnitName           string               `json:"unitName,omitempty"`
+	UnitPrice          InvoiceBodyUnitPrice `json:"unitPrice,omitempty"`
+	DiscountPercentage float64              `json:"discountPercentage,omitempty"`
+	LineItemAmount     float64              `json:"lineItemAmount,omitempty"`
 }
 
 type InvoiceBodyUnitPrice struct {
-	Currency          string  `json:"currency"`
-	NetAmount         float64 `json:"netAmount"`
-	GrossAmount       float64 `json:"grossAmount"`
-	TaxRatePercentage int     `json:"taxRatePercentage"`
+	Currency          string  `json:"currency,omitempty"`
+	NetAmount         float64 `json:"netAmount,omitempty"`
+	GrossAmount       float64 `json:"grossAmount,omitempty"`
+	TaxRatePercentage float64 `json:"taxRatePercentage,omitempty"`
 }
 
 type InvoiceBodyTotalPrice struct {
-	Currency                string      `json:"currency"`
-	TotalNetAmount          float64     `json:"totalNetAmount"`
-	TotalGrossAmount        float64     `json:"totalGrossAmount"`
-	TaxRatePercentage       interface{} `json:"taxRatePercentage"`
-	TotalTaxAmount          float64     `json:"totalTaxAmount"`
-	TotalDiscountAbsolute   interface{} `json:"totalDiscountAbsolute"`
-	TotalDiscountPercentage interface{} `json:"totalDiscountPercentage"`
+	Currency                string  `json:"currency,omitempty"`
+	TotalNetAmount          float64 `json:"totalNetAmount,omitempty"`
+	TotalGrossAmount        float64 `json:"totalGrossAmount,omitempty"`
+	TaxRatePercentage       float64 `json:"taxRatePercentage,omitempty"`
+	TotalTaxAmount          float64 `json:"totalTaxAmount,omitempty"`
+	TotalDiscountAbsolute   float64 `json:"totalDiscountAbsolute,omitempty"`
+	TotalDiscountPercentage float64 `json:"totalDiscountPercentage,omitempty"`
 }
 
 type InvoiceBodyTaxAmounts struct {
-	TaxRatePercentage int     `json:"taxRatePercentage"`
-	TaxAmount         float64 `json:"taxAmount"`
-	Amount            float64 `json:"amount"`
+	TaxRatePercentage float64 `json:"taxRatePercentage,omitempty"`
+	TaxAmount         float64 `json:"taxAmount,omitempty"`
+	Amount            float64 `json:"amount,omitempty"`
 }
 
 type InvoiceBodyTaxConditions struct {
-	TaxType     string      `json:"taxType"`
-	TaxTypeNote interface{} `json:"taxTypeNote"`
+	TaxType     string `json:"taxType,omitempty"`
+	TaxTypeNote string `json:"taxTypeNote,omitempty"`
 }
 
 type InvoiceBodyPaymentConditions struct {
-	PaymentTermLabel          string                               `json:"paymentTermLabel"`
-	PaymentTermDuration       int                                  `json:"paymentTermDuration"`
+	PaymentTermLabel          string                               `json:"paymentTermLabel,omitempty"`
+	PaymentTermDuration       int                                  `json:"paymentTermDuration,omitempty"`
 	PaymentDiscountConditions InvoiceBodyPaymentDiscountConditions `json:"paymentDiscountConditions"`
 }
 
@@ -101,37 +122,42 @@ type InvoiceBodyPaymentDiscountConditions struct {
 }
 
 type InvoiceBodyShippingConditions struct {
-	ShippingDate    string      `json:"shippingDate"`
-	ShippingEndDate interface{} `json:"shippingEndDate"`
-	ShippingType    string      `json:"shippingType"`
+	ShippingDate    Date   `json:"shippingDate,omitempty"`
+	ShippingEndDate Date   `json:"shippingEndDate,omitempty"`
+	ShippingType    string `json:"shippingType,omitempty"`
 }
 
 // InvoiceReturn is to decode json data
 type InvoiceReturn struct {
-	Id          string `json:"id"`
-	ResourceUri string `json:"resourceUri"`
-	CreatedDate string `json:"createdDate"`
-	UpdatedDate string `json:"updatedDate"`
-	Version     int    `json:"version"`
+	ID          string `json:"id,omitempty"`
+	ResourceURI string `json:"resourceUri,omitempty"`
+	CreatedDate Date   `json:"createdDate,omitempty"`
+	UpdatedDate Date   `json:"updatedDate,omitempty"`
+	Version     int    `json:"version,omitempty"`
 }
 
-// Invoice is to get a invoice by id
-func (c *Client) Invoice(ctx context.Context, id string) (InvoiceBody, error) {
+func (c *Client) GetInvoice(ctx context.Context, id string) (InvoiceBody, error) {
 	var ib InvoiceBody
-	err := c.Request("/v1/invoices/" + id).ToJSON(&ib).Fetch(ctx)
+	var er ErrorResponse
+	err := c.Request("/v1/invoices/" + id).ToJSON(&ib).ErrorJSON(&er).Fetch(ctx)
 	if err != nil {
-		return ib, err
+		return ib, fmt.Errorf("error getting invoice (%s): %w", er.String(), err)
 	}
 
 	return ib, nil
 }
 
-// AddInvoice is to create a invoice
-func (c *Client) AddInvoice(ctx context.Context, body InvoiceBody) (InvoiceReturn, error) {
+func (c *Client) CreateInvoice(ctx context.Context, body InvoiceBody, finalize bool) (InvoiceReturn, error) {
 	var ir InvoiceReturn
-	err := c.Request("/v1/invoices").BodyJSON(body).ToJSON(&ir).Post().Fetch(ctx)
+	var er ErrorResponse
+	qb := c.Request("/v1/invoices").BodyJSON(body).ToJSON(&ir).Post().ErrorJSON(&er)
+	if finalize {
+		qb.Param("finalize", "true")
+	}
+
+	err := qb.Fetch(ctx)
 	if err != nil {
-		return ir, err
+		return ir, fmt.Errorf("error creating invoice (%s): %w", er.String(), err)
 	}
 
 	return ir, nil

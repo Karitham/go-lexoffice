@@ -1,5 +1,7 @@
 package golexoffice
 
+import "strings"
+
 // source: https://developers.lexoffice.io/docs/#error-codes-legacy-error-response
 // files, profile, contacts
 //
@@ -17,6 +19,30 @@ type LegacyErrorResponse struct {
 		Source string `json:"source"`
 		Type   string `json:"type"`
 	} `json:"IssueList"`
+}
+
+func (e LegacyErrorResponse) Error() string {
+	return e.String()
+}
+
+func (e LegacyErrorResponse) String() string {
+	builder := &strings.Builder{}
+	for i, issue := range e.IssueList {
+		builder.WriteString(issue.Key)
+		builder.WriteString(": ")
+		builder.WriteString(issue.Source)
+		if issue.Type != "" {
+			builder.WriteString(" (")
+			builder.WriteString(issue.Type)
+			builder.WriteString(")")
+		}
+
+		if i < len(e.IssueList)-1 {
+			builder.WriteString(", ")
+		}
+	}
+
+	return builder.String()
 }
 
 // source: https://developers.lexoffice.io/docs/#error-codes-regular-error-response
@@ -38,15 +64,47 @@ type LegacyErrorResponse struct {
 //		]
 //	}
 type ErrorResponse struct {
-	Timestamp string `json:"timestamp"` // FIXME: should be a date thing
-	Status    int    `json:"status"`
-	Error     string `json:"error"`
-	Path      string `json:"path"`
-	TraceID   string `json:"traceId"`
-	Message   string `json:"message"`
-	Details   []struct {
+	Timestamp   Date   `json:"timestamp"` // FIXME: should be a date thing
+	Status      int    `json:"status"`
+	ErrorString string `json:"error"`
+	Path        string `json:"path"`
+	TraceID     string `json:"traceId"`
+	Message     string `json:"message"`
+	Details     []struct {
 		Violation string `json:"violation"`
 		Field     string `json:"field"`
 		Message   string `json:"message"`
 	} `json:"details"`
+}
+
+func (e ErrorResponse) Error() string {
+	return e.String()
+}
+
+func (e ErrorResponse) String() string {
+	builder := &strings.Builder{}
+	builder.WriteString(e.Message)
+
+	if len(e.Details) == 0 {
+		return builder.String()
+	}
+
+	builder.WriteString(" (")
+	for i, detail := range e.Details {
+		builder.WriteString(detail.Field)
+		builder.WriteString(": ")
+		builder.WriteString(detail.Message)
+		if detail.Violation != "" {
+			builder.WriteString(" (")
+			builder.WriteString(detail.Violation)
+			builder.WriteString(")")
+		}
+
+		if i < len(e.Details)-1 {
+			builder.WriteString(", ")
+		}
+	}
+	builder.WriteString(")")
+
+	return builder.String()
 }

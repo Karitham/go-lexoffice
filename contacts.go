@@ -213,13 +213,15 @@ type ContactReturn struct {
 func (c *Client) Contacts(ctx context.Context) ([]ContactsReturnContent, error) {
 	var contacts []ContactsReturnContent
 
+	var er LegacyErrorResponse
 	var cr ContactsReturn
 	for page := 0; page < cr.TotalPages; page++ {
 		err := c.Request(fmt.Sprintf("/v1/contacts?page=%d", page)).
 			ToJSON(&cr).
+			ErrorJSON(&er).
 			Fetch(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error while get contacts: %s", err)
 		}
 
 		// Add contacts
@@ -233,10 +235,11 @@ func (c *Client) Contacts(ctx context.Context) ([]ContactsReturnContent, error) 
 
 // Contact is to get a contact by id
 func (c *Client) Contact(ctx context.Context, id string) (ContactsReturnContent, error) {
+	var er LegacyErrorResponse
 	var crc ContactsReturnContent
-	err := c.Request(fmt.Sprintf("/v1/contacts/%s", id)).ToJSON(&crc).Fetch(ctx)
+	err := c.Request(fmt.Sprintf("/v1/contacts/%s", id)).ToJSON(&crc).ErrorJSON(&er).Fetch(ctx)
 	if err != nil {
-		return crc, err
+		return crc, fmt.Errorf("error while get contact: %s", err)
 	}
 	return crc, nil
 
@@ -244,14 +247,16 @@ func (c *Client) Contact(ctx context.Context, id string) (ContactsReturnContent,
 
 // AddContact is to add a new contact
 func (c *Client) AddContact(ctx context.Context, body ContactBody) (ContactReturn, error) {
+	var er LegacyErrorResponse
 	var cr ContactReturn
 	err := c.Request("/v1/contacts/").
 		BodyJSON(body).
 		ToJSON(&cr).
+		ErrorJSON(&er).
 		Post().
 		Fetch(ctx)
 	if err != nil {
-		return cr, err
+		return cr, fmt.Errorf("error while add contact: %s", err)
 	}
 
 	return cr, nil
@@ -259,10 +264,12 @@ func (c *Client) AddContact(ctx context.Context, body ContactBody) (ContactRetur
 
 // UpdateContact is to add a new contact
 func (c *Client) UpdateContact(body ContactBody) (ContactReturn, error) {
+	var er LegacyErrorResponse
 	var cr ContactReturn
 	err := c.Request("/v1/contacts/" + body.Id).
 		BodyJSON(body).
 		ToJSON(&cr).
+		ErrorJSON(&er).
 		Put().
 		Fetch(context.Background())
 	if err != nil {

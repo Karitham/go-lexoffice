@@ -12,6 +12,7 @@ package golexoffice
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"mime/multipart"
 )
@@ -43,14 +44,16 @@ func (c *Client) AddFile(ctx context.Context, r io.Reader, name string) (FileRet
 		return FileReturn{}, err
 	}
 
+	var er LegacyErrorResponse
 	var fr FileReturn
 	err = c.Request("/v1/files/").
 		ContentType(writer.FormDataContentType()).
 		BodyReader(body).
-		ToJSON(&FileReturn{}).
+		ToJSON(&fr).
+		ErrorJSON(&er).
 		Fetch(ctx)
 	if err != nil {
-		return fr, err
+		return fr, fmt.Errorf("error while request (%s): %w", er, err)
 	}
 
 	return fr, nil

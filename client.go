@@ -63,5 +63,6 @@ func (c *Client) Request(path string) *requests.Builder {
 	return requests.
 		URL(c.baseUrl).
 		Path(path).
+		Accept("application/json").
 		Client(c.httpClient)
 }
