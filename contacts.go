@@ -10,8 +10,7 @@
 package golexoffice
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
 )
 
@@ -211,47 +210,20 @@ type ContactReturn struct {
 }
 
 // Contacts is to get a list of all contacts
-func (c *Config) Contacts() ([]ContactsReturnContent, error) {
-
-	// To save the contact data
+func (c *Client) Contacts(ctx context.Context) ([]ContactsReturnContent, error) {
 	var contacts []ContactsReturnContent
 
-	// To call the page
-	page := 0
-
-	// Loop over all sites
-	for {
-
-		// Set config for new request
-		// c := NewConfig(, token, &http.Client{})
-
-		// Send request
-		response, err := c.Send(fmt.Sprintf("/v1/contacts?page=%d", page), nil, "GET", "application/json")
+	var cr ContactsReturn
+	for page := 0; page < cr.TotalPages; page++ {
+		err := c.Request(fmt.Sprintf("/v1/contacts?page=%d", page)).
+			ToJSON(&cr).
+			Fetch(ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		// Decode data
-		var decode ContactsReturn
-
-		err = json.NewDecoder(response.Body).Decode(&decode)
-		if err != nil {
-			return nil, err
-		}
-
-		// Close request
-		response.Body.Close()
 
 		// Add contacts
-		contacts = append(contacts, decode.Content...)
-
-		// Check length & break the loop
-		if decode.TotalPages == page {
-			break
-		} else {
-			page++
-		}
-
+		contacts = append(contacts, cr.Content...)
 	}
 
 	// Return data
@@ -260,97 +232,42 @@ func (c *Config) Contacts() ([]ContactsReturnContent, error) {
 }
 
 // Contact is to get a contact by id
-func (c *Config) Contact(id string) (ContactsReturnContent, error) {
-
-	// Set config for new request
-	// c := NewConfig(, token, &http.Client{})
-
-	// Send request
-	response, err := c.Send("/v1/contacts/"+id, nil, "GET", "application/json")
+func (c *Client) Contact(ctx context.Context, id string) (ContactsReturnContent, error) {
+	var crc ContactsReturnContent
+	err := c.Request(fmt.Sprintf("/v1/contacts/%s", id)).ToJSON(&crc).Fetch(ctx)
 	if err != nil {
-		return ContactsReturnContent{}, err
+		return crc, err
 	}
-
-	// Close request
-	defer response.Body.Close()
-
-	// Decode data
-	var decode ContactsReturnContent
-
-	err = json.NewDecoder(response.Body).Decode(&decode)
-	if err != nil {
-		return ContactsReturnContent{}, err
-	}
-
-	// Return data
-	return decode, nil
+	return crc, nil
 
 }
 
 // AddContact is to add a new contact
-func (c *Config) AddContact(body ContactBody) (ContactReturn, error) {
-
-	// Convert body
-	convert, err := json.Marshal(body)
+func (c *Client) AddContact(ctx context.Context, body ContactBody) (ContactReturn, error) {
+	var cr ContactReturn
+	err := c.Request("/v1/contacts/").
+		BodyJSON(body).
+		ToJSON(&cr).
+		Post().
+		Fetch(ctx)
 	if err != nil {
-		return ContactReturn{}, err
+		return cr, err
 	}
 
-	// Set config for new request
-	// c := NewConfig(, token, &http.Client{})
-
-	// Send request
-	response, err := c.Send("/v1/contacts/", bytes.NewBuffer(convert), "POST", "application/json")
-	if err != nil {
-		return ContactReturn{}, err
-	}
-
-	// Close request
-	defer response.Body.Close()
-
-	// Decode data
-	var decode ContactReturn
-
-	err = json.NewDecoder(response.Body).Decode(&decode)
-	if err != nil {
-		return ContactReturn{}, err
-	}
-
-	// Return data
-	return decode, nil
-
+	return cr, nil
 }
 
 // UpdateContact is to add a new contact
-func (c *Config) UpdateContact(body ContactBody) (ContactReturn, error) {
-
-	// Convert body
-	convert, err := json.Marshal(body)
+func (c *Client) UpdateContact(body ContactBody) (ContactReturn, error) {
+	var cr ContactReturn
+	err := c.Request("/v1/contacts/" + body.Id).
+		BodyJSON(body).
+		ToJSON(&cr).
+		Put().
+		Fetch(context.Background())
 	if err != nil {
-		return ContactReturn{}, err
+		return cr, err
 	}
 
-	// Set config for new request
-	// c := NewConfig(, token, &http.Client{})
-
-	// Send request
-	response, err := c.Send("/v1/contacts/"+body.Id, bytes.NewBuffer(convert), "PUT", "application/json")
-	if err != nil {
-		return ContactReturn{}, err
-	}
-
-	// Close request
-	defer response.Body.Close()
-
-	// Decode data
-	var decode ContactReturn
-
-	err = json.NewDecoder(response.Body).Decode(&decode)
-	if err != nil {
-		return ContactReturn{}, err
-	}
-
-	// Return data
-	return decode, nil
-
+	return cr, nil
 }

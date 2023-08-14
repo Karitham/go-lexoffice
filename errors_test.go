@@ -1,11 +1,12 @@
 package golexoffice_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hostwithquantum/golexoffice"
+	lexoffice "github.com/karitham/go-lexoffice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,12 +18,11 @@ func TestErrorResponse(t *testing.T) {
 	server := errorMock()
 	defer server.Close()
 
-	lexOffice := golexoffice.NewConfig("token", nil)
-	lexOffice.SetBaseUrl(server.URL)
+	config := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL))
 
 	t.Run("errors=legacy", func(t *testing.T) {
-		_, err := lexOffice.AddContact(golexoffice.ContactBody{
-			Company: &golexoffice.ContactBodyCompany{
+		_, err := config.AddContact(context.Background(), lexoffice.ContactBody{
+			Company: &lexoffice.ContactBodyCompany{
 				Name:              "company",
 				VatRegistrationId: "",
 				TaxNumber:         "",
@@ -32,7 +32,7 @@ func TestErrorResponse(t *testing.T) {
 	})
 
 	t.Run("errors=new", func(t *testing.T) {
-		_, err := lexOffice.AddInvoice(golexoffice.InvoiceBody{})
+		_, err := config.AddInvoice(context.Background(), lexoffice.InvoiceBody{})
 		assert.Error(t, err)
 	})
 

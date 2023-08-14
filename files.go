@@ -11,10 +11,9 @@ package golexoffice
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"io"
 	"mime/multipart"
-	"os"
 )
 
 // FileReturn is to decode json data
@@ -23,56 +22,36 @@ type FileReturn struct {
 }
 
 // AddFile is to upload a file
-func (c *Config) AddFile(file *os.File, name string) (FileReturn, error) {
-
-	// Create form data
+func (c *Client) AddFile(ctx context.Context, r io.Reader, name string) (FileReturn, error) {
 	body := &bytes.Buffer{}
-
-	// Create writer
 	writer := multipart.NewWriter(body)
 
-	// Create body data
 	filePart, err := writer.CreateFormFile("file", name)
 	if err != nil {
 		return FileReturn{}, err
 	}
 
-	// Copy form & file
-	_, err = io.Copy(filePart, file)
+	_, err = io.Copy(filePart, r)
 	if err != nil {
 		return FileReturn{}, err
 	}
 
-	// Create text part
 	_ = writer.WriteField("type", "voucher")
 
-	// Close writer
 	err = writer.Close()
 	if err != nil {
 		return FileReturn{}, err
 	}
 
-	// Set config for new request
-	//c := NewConfig(, token, &http.Client{})
-
-	// Send request
-	response, err := c.Send("/v1/files/", body, "POST", writer.FormDataContentType())
+	var fr FileReturn
+	err = c.Request("/v1/files/").
+		ContentType(writer.FormDataContentType()).
+		BodyReader(body).
+		ToJSON(&FileReturn{}).
+		Fetch(ctx)
 	if err != nil {
-		return FileReturn{}, err
+		return fr, err
 	}
 
-	// Close request
-	defer response.Body.Close()
-
-	// Decode data
-	var decode FileReturn
-
-	err = json.NewDecoder(response.Body).Decode(&decode)
-	if err != nil {
-		return FileReturn{}, err
-	}
-
-	// Return data
-	return decode, nil
-
+	return fr, nil
 }

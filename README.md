@@ -1,24 +1,28 @@
 # LexOffice for GO
 
+This is a fork of <https://github.com/hostwithquantum/golexoffice>.
+
+It was customized to bit a bit more ergonomic and to use contexts.
+
 > This started as a fork of the now archived `gooffice`. It has since moved namespaces. And is now
 > maintained by [Planetary Quantum GmbH](https://github.com/hostwithquantum).
 
 ## Install
 
 ```console
-go get github.com/hostwithquantum/golexoffice
+go get github.com/karitham/go-lexoffice
 ```
 
 ## How to use?
 
 ```go
 import(
-    "github.com/hostwithquantum/golexoffice"
+    "github.com/karitham/go-lexoffice"
 )
 
 func main() {
     // initialize the client, http.Client is optional but allows you to set timeouts, etc.
-    client := golexoffice.NewConfig("token", &http.Client{})
+    client := lexoffice.NewClient("token")
 }
 ```
 
@@ -30,12 +34,8 @@ To get all contacts you can perform the following function.
 
 ```go
 // Get all contacts
-contacts, err := client.Contacts()
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(contacts)
-}
+contacts, _ := client.Contacts(ctx)
+fmt.Println(contacts)
 ```
 
 ### Get a contact by id
@@ -44,12 +44,8 @@ If you want to read out a specific contact, you can do this via the id (UUID).
 
 ```go
 // Get a contact by id
-contact, err := client.Contact("b324c2be-b745-4128-9ecd-e262a0a761cd")
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(contact)
-}
+contact, _ := client.Contact(ctx, "b324c2be-b745-4128-9ecd-e262a0a761cd")
+fmt.Println(contact)
 ```
 
 ### Create a new contact
@@ -112,12 +108,8 @@ body := golexoffice.ContactBody{
 }
 
 // Create a new contact
-contactReturn, err := client.AddContact(body)
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(contactReturn)
-}
+contactReturn, _ := client.AddContact(ctx, body)
+fmt.Println(contactReturn)
 ```
 
 ### Update a contact
@@ -181,12 +173,8 @@ body := golexoffice.ContactBody{
 }
 
 // Update the contact
-contactReturn, err := client.UpdateContact(body)
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(contactReturn)
-}
+contactReturn, _ := client.UpdateContact(ctx, body)
+fmt.Println(contactReturn)
 ```
 
 ### Get a invoice
@@ -195,12 +183,8 @@ If you want to read out a specific invoice, you can do this via the id (UUID).
 
 ```go
 // Invoice is to get a invoice by id
-invoice, err := client.Invoice("0cf8142b-6f54-4c96-9766-6f44a9a4814b")
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(invoice)
-}
+invoice, _ := client.Invoice(ctx, "0cf8142b-6f54-4c96-9766-6f44a9a4814b")
+fmt.Println(invoice)
 ```
 
 ### Create a invoice
@@ -286,12 +270,8 @@ body := golexoffice.InvoiceBody{
 }
 
 // Create new contact
-invoice, err := client.AddInvoice(body)
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(invoice)
-}
+invoice, _ := client.AddInvoice(ctx, body)
+fmt.Println(invoice)
 ```
 
 ### Upload a file
@@ -304,14 +284,11 @@ For more information, please refer to the [documentation](https://developers.lex
 // Open file
 file, err := os.Open("/Users/jonaskwiedor/Downloads/Rechnung 201912101300005.pdf")
 if err != nil {
-    fmt.Println(err)
+    panic(err)
 }
+defer file.Close()
 
 // upload the file to LexOffice
-files, err := client.AddFile(file, "Rechnung 201912101300005.pdf")
-if err != nil {
-    fmt.Println(err)
-} else {
-    fmt.Println(files)
-}
+files, _ := client.AddFile(ctx, file, "Rechnung 201912101300005.pdf")
+fmt.Println(files)
 ```

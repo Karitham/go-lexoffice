@@ -12,10 +12,7 @@
 package golexoffice
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
+	"context"
 )
 
 // InvoiceBody is to define body data
@@ -119,69 +116,23 @@ type InvoiceReturn struct {
 }
 
 // Invoice is to get a invoice by id
-func (c *Config) Invoice(id string) (InvoiceBody, error) {
-
-	// Set config for new request
-	//c := NewConfig(, token, &http.Client{})
-
-	// Send request
-	response, err := c.Send("/v1/invoices/"+id, nil, "GET", "application/json")
+func (c *Client) Invoice(ctx context.Context, id string) (InvoiceBody, error) {
+	var ib InvoiceBody
+	err := c.Request("/v1/invoices/" + id).ToJSON(&ib).Fetch(ctx)
 	if err != nil {
-		return InvoiceBody{}, err
+		return ib, err
 	}
 
-	// Close request
-	defer response.Body.Close()
-
-	read, err := io.ReadAll(response.Body)
-	if err != nil {
-		return InvoiceBody{}, err
-	}
-	fmt.Println(string(read))
-
-	// Decode data
-	var decode InvoiceBody
-
-	err = json.NewDecoder(response.Body).Decode(&decode)
-	if err != nil {
-		return InvoiceBody{}, err
-	}
-
-	// Return data
-	return decode, nil
-
+	return ib, nil
 }
 
 // AddInvoice is to create a invoice
-func (c *Config) AddInvoice(body InvoiceBody) (InvoiceReturn, error) {
-
-	// Convert body
-	convert, err := json.Marshal(body)
+func (c *Client) AddInvoice(ctx context.Context, body InvoiceBody) (InvoiceReturn, error) {
+	var ir InvoiceReturn
+	err := c.Request("/v1/invoices").BodyJSON(body).ToJSON(&ir).Post().Fetch(ctx)
 	if err != nil {
-		return InvoiceReturn{}, err
+		return ir, err
 	}
 
-	// Set config for new request
-	//c := NewConfig(, token, &http.Client{})
-
-	// Send request
-	response, err := c.Send("/v1/invoices", bytes.NewBuffer(convert), "POST", "application/json")
-	if err != nil {
-		return InvoiceReturn{}, err
-	}
-
-	// Close request
-	defer response.Body.Close()
-
-	// Decode data
-	var decode InvoiceReturn
-
-	err = json.NewDecoder(response.Body).Decode(&decode)
-	if err != nil {
-		return InvoiceReturn{}, err
-	}
-
-	// Return data
-	return decode, nil
-
+	return ir, nil
 }

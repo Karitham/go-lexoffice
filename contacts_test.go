@@ -1,12 +1,13 @@
 package golexoffice_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hostwithquantum/golexoffice"
+	lexoffice "github.com/karitham/go-lexoffice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,15 +15,13 @@ func TestAddContact(t *testing.T) {
 	server := lexOfficeMock()
 	defer server.Close()
 
-	config := golexoffice.NewConfig("api-key", nil)
-	config.SetBaseUrl(server.URL)
-
-	resp, err := config.AddContact(golexoffice.ContactBody{
+	config := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL))
+	resp, err := config.AddContact(context.Background(), lexoffice.ContactBody{
 		Version: 0,
-		Roles: golexoffice.ContactBodyRoles{
-			Customer: &golexoffice.ContactBodyCustomer{},
+		Roles: lexoffice.ContactBodyRoles{
+			Customer: &lexoffice.ContactBodyCustomer{},
 		},
-		Person: &golexoffice.ContactBodyPerson{
+		Person: &lexoffice.ContactBodyPerson{
 			FirstName: "Thomas",
 			LastName:  "Mustermann",
 		},
@@ -39,11 +38,10 @@ func TestGetContacts(t *testing.T) {
 	server := lexOfficeMock()
 	defer server.Close()
 
-	config := golexoffice.NewConfig("api-key", nil)
-	config.SetBaseUrl(server.URL)
+	config := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL))
 
 	t.Run("mock=company", func(t *testing.T) {
-		resp, err := config.Contact("c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+		resp, err := config.Contact(context.Background(), "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
 		assert.NoError(t, err)
 
 		assert.Equal(t, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5", resp.Id)
@@ -53,7 +51,7 @@ func TestGetContacts(t *testing.T) {
 	})
 
 	t.Run("mock=person", func(t *testing.T) {
-		resp, err := config.Contact("e9066f04-8cc7-4616-93f8-ac9ecc8479c8")
+		resp, err := config.Contact(context.Background(), "e9066f04-8cc7-4616-93f8-ac9ecc8479c8")
 		assert.NoError(t, err)
 
 		assert.Equal(t, "e9066f04-8cc7-4616-93f8-ac9ecc8479c8", resp.Id)
