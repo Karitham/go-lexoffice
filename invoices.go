@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const DateFormat = "2006-01-02T15:04:05.000-07:00"
@@ -83,26 +85,26 @@ type InvoiceBodyLineItems struct {
 }
 
 type InvoiceBodyUnitPrice struct {
-	Currency          string  `json:"currency,omitempty"`
-	NetAmount         float64 `json:"netAmount,omitempty"`
-	GrossAmount       float64 `json:"grossAmount,omitempty"`
-	TaxRatePercentage float64 `json:"taxRatePercentage,omitempty"`
+	Currency          string          `json:"currency,omitempty"`
+	NetAmount         decimal.Decimal `json:"netAmount,omitempty"`
+	GrossAmount       decimal.Decimal `json:"grossAmount,omitempty"`
+	TaxRatePercentage float64         `json:"taxRatePercentage,omitempty"`
 }
 
 type InvoiceBodyTotalPrice struct {
-	Currency                string  `json:"currency,omitempty"`
-	TotalNetAmount          float64 `json:"totalNetAmount,omitempty"`
-	TotalGrossAmount        float64 `json:"totalGrossAmount,omitempty"`
-	TaxRatePercentage       float64 `json:"taxRatePercentage,omitempty"`
-	TotalTaxAmount          float64 `json:"totalTaxAmount,omitempty"`
-	TotalDiscountAbsolute   float64 `json:"totalDiscountAbsolute,omitempty"`
-	TotalDiscountPercentage float64 `json:"totalDiscountPercentage,omitempty"`
+	Currency                string          `json:"currency,omitempty"`
+	TotalNetAmount          decimal.Decimal `json:"totalNetAmount,omitempty"`
+	TotalGrossAmount        decimal.Decimal `json:"totalGrossAmount,omitempty"`
+	TaxRatePercentage       float64         `json:"taxRatePercentage,omitempty"`
+	TotalTaxAmount          decimal.Decimal `json:"totalTaxAmount,omitempty"`
+	TotalDiscountAbsolute   decimal.Decimal `json:"totalDiscountAbsolute,omitempty"`
+	TotalDiscountPercentage float64         `json:"totalDiscountPercentage,omitempty"`
 }
 
 type InvoiceBodyTaxAmounts struct {
-	TaxRatePercentage float64 `json:"taxRatePercentage,omitempty"`
-	TaxAmount         float64 `json:"taxAmount,omitempty"`
-	Amount            float64 `json:"amount,omitempty"`
+	TaxRatePercentage float64         `json:"taxRatePercentage,omitempty"`
+	TaxAmount         decimal.Decimal `json:"taxAmount,omitempty"`
+	Amount            decimal.Decimal `json:"amount,omitempty"`
 }
 
 type InvoiceBodyTaxConditions struct {
