@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aarondl/opt/omit"
 	"github.com/shopspring/decimal"
 )
 
@@ -113,14 +114,14 @@ type InvoiceBodyTaxConditions struct {
 }
 
 type InvoiceBodyPaymentConditions struct {
-	PaymentTermLabel          string                               `json:"paymentTermLabel,omitempty"`
-	PaymentTermDuration       int                                  `json:"paymentTermDuration,omitempty"`
-	PaymentDiscountConditions InvoiceBodyPaymentDiscountConditions `json:"paymentDiscountConditions"`
+	PaymentTermLabel          string                                         `json:"paymentTermLabel,omitempty"`
+	PaymentTermDuration       int                                            `json:"paymentTermDuration,omitempty"`
+	PaymentDiscountConditions omit.Val[InvoiceBodyPaymentDiscountConditions] `json:"paymentDiscountConditions,omitempty"`
 }
 
 type InvoiceBodyPaymentDiscountConditions struct {
-	DiscountPercentage int `json:"discountPercentage"`
-	DiscountRange      int `json:"discountRange"`
+	DiscountPercentage int `json:"discountPercentage,omitempty"`
+	DiscountRange      int `json:"discountRange,omitempty"`
 }
 
 type InvoiceBodyShippingConditions struct {
