@@ -64,6 +64,7 @@ func (c *Client) CreateFile(ctx context.Context, r io.Reader, name string) (Crea
 func (c *Client) DownloadFile(ctx context.Context, out io.Writer, id string) error {
 	var er LegacyErrorResponse
 	err := c.Requestf("/v1/files/%s", id).
+		Header("Accept", "application/octet-stream", "application/pdf").
 		ErrorJSON(&er).
 		ToWriter(out).
 		Fetch(ctx)

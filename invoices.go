@@ -62,6 +62,11 @@ type InvoiceBody struct {
 	Title              string                        `json:"title,omitempty"`
 	Introduction       string                        `json:"introduction,omitempty"`
 	Remark             string                        `json:"remark,omitempty"`
+	Files              InvoiceBodyFiles              `json:"files,omitempty"`
+}
+
+type InvoiceBodyFiles struct {
+	ID string `json:"documentFileId,omitempty"`
 }
 
 type InvoiceBodyAddress struct {
@@ -131,8 +136,8 @@ type InvoiceBodyShippingConditions struct {
 	ShippingType    string `json:"shippingType,omitempty"`
 }
 
-// InvoiceReturn is to decode json data
-type InvoiceReturn struct {
+// InvoiceResponse is to decode json data
+type InvoiceResponse struct {
 	ID          string `json:"id,omitempty"`
 	ResourceURI string `json:"resourceUri,omitempty"`
 	CreatedDate Date   `json:"createdDate,omitempty"`
@@ -166,8 +171,8 @@ type CreateInvoiceOptions struct {
 // CreateInvoice is to create a new invoice, or to pursue a sales voucher to an invoice
 // <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-create-an-invoice> and
 // <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-pursue-to-an-invoice>
-func (c *Client) CreateInvoice(ctx context.Context, o CreateInvoiceOptions) (InvoiceReturn, error) {
-	var ir InvoiceReturn
+func (c *Client) CreateInvoice(ctx context.Context, o CreateInvoiceOptions) (InvoiceResponse, error) {
+	var ir InvoiceResponse
 	var er ErrorResponse
 	qb := c.Request("/v1/invoices").ToJSON(&ir).Post().ErrorJSON(&er)
 	if o.Finalize {
@@ -213,6 +218,6 @@ func (c *Client) DeeplinkInvoiceURL(ctx context.Context, invoiceID string, edit 
 		arg = "edit"
 	}
 
-	p, _ := url.JoinPath(c.baseUrl, "/permalink/invoices", arg, invoiceID)
+	p, _ := url.JoinPath("https://app.lexoffice.de/permalink/invoices", arg, invoiceID)
 	return p, nil
 }
