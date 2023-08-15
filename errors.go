@@ -13,7 +13,7 @@ import "strings"
 //		]
 //	}
 type LegacyErrorResponse struct {
-	RequestId string `json:"requestId"`
+	RequestID string `json:"requestId"`
 	IssueList []struct {
 		Key    string `json:"i18nKey"`
 		Source string `json:"source"`
@@ -64,7 +64,7 @@ func (e LegacyErrorResponse) String() string {
 //		]
 //	}
 type ErrorResponse struct {
-	Timestamp   Date   `json:"timestamp"` // FIXME: should be a date thing
+	Timestamp   Date   `json:"timestamp"`
 	Status      int    `json:"status"`
 	ErrorString string `json:"error"`
 	Path        string `json:"path"`

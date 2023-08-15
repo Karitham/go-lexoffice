@@ -16,7 +16,7 @@ func TestAddContact(t *testing.T) {
 	defer server.Close()
 
 	config := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL))
-	resp, err := config.AddContact(context.Background(), lexoffice.ContactBody{
+	resp, err := config.CreateContact(context.Background(), lexoffice.ContactBody{
 		Version: 0,
 		Roles: lexoffice.ContactBodyRoles{
 			Customer: &lexoffice.ContactBodyCustomer{},
@@ -41,7 +41,7 @@ func TestGetContacts(t *testing.T) {
 	config := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL))
 
 	t.Run("mock=company", func(t *testing.T) {
-		resp, err := config.Contact(context.Background(), "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+		resp, err := config.GetContact(context.Background(), "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
 		assert.NoError(t, err)
 
 		assert.Equal(t, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5", resp.Id)
@@ -51,7 +51,7 @@ func TestGetContacts(t *testing.T) {
 	})
 
 	t.Run("mock=person", func(t *testing.T) {
-		resp, err := config.Contact(context.Background(), "e9066f04-8cc7-4616-93f8-ac9ecc8479c8")
+		resp, err := config.GetContact(context.Background(), "e9066f04-8cc7-4616-93f8-ac9ecc8479c8")
 		assert.NoError(t, err)
 
 		assert.Equal(t, "e9066f04-8cc7-4616-93f8-ac9ecc8479c8", resp.Id)
@@ -125,7 +125,7 @@ func lexOfficeMock() *httptest.Server {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
 
-			if r.URL.Path == "/v1/contacts/" {
+			if r.URL.Path == "/v1/contacts" {
 				//nolint:errcheck
 				w.Write([]byte(`{
 					"id": "66196c43-baf3-4335-bfee-d610367059db",

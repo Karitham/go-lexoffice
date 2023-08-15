@@ -15,6 +15,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/aarondl/opt/omit"
@@ -139,10 +140,12 @@ type InvoiceReturn struct {
 	Version     int    `json:"version,omitempty"`
 }
 
+// GetInvoice is to get a invoice
+// <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-retrieve-an-invoice>
 func (c *Client) GetInvoice(ctx context.Context, id string) (InvoiceBody, error) {
 	var ib InvoiceBody
 	var er ErrorResponse
-	err := c.Request("/v1/invoices/" + id).ToJSON(&ib).ErrorJSON(&er).Fetch(ctx)
+	err := c.Requestf("/v1/invoices/%s", id).ToJSON(&ib).ErrorJSON(&er).Fetch(ctx)
 	if err != nil {
 		return ib, fmt.Errorf("error getting invoice (%s): %w", er.String(), err)
 	}
@@ -150,12 +153,31 @@ func (c *Client) GetInvoice(ctx context.Context, id string) (InvoiceBody, error)
 	return ib, nil
 }
 
-func (c *Client) CreateInvoice(ctx context.Context, body InvoiceBody, finalize bool) (InvoiceReturn, error) {
+// CreateInvoiceOptions represent the set of possible options when creating an invoice.
+// if you provide a body, then the invoice will be created with the given body.
+// if you provide a preceding sales voucher id,
+// then the invoice will be created from the sales voucher with the given id.
+type CreateInvoiceOptions struct {
+	Finalize                bool
+	PrecedingSalesVoucherID string
+	Body                    InvoiceBody
+}
+
+// CreateInvoice is to create a new invoice, or to pursue a sales voucher to an invoice
+// <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-create-an-invoice> and
+// <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-pursue-to-an-invoice>
+func (c *Client) CreateInvoice(ctx context.Context, o CreateInvoiceOptions) (InvoiceReturn, error) {
 	var ir InvoiceReturn
 	var er ErrorResponse
-	qb := c.Request("/v1/invoices").BodyJSON(body).ToJSON(&ir).Post().ErrorJSON(&er)
-	if finalize {
-		qb.Param("finalize", "true")
+	qb := c.Request("/v1/invoices").ToJSON(&ir).Post().ErrorJSON(&er)
+	if o.Finalize {
+		qb = qb.Param("finalize", "true")
+	}
+
+	if o.PrecedingSalesVoucherID != "" {
+		qb = qb.Param("precedingSalesVoucherId", o.PrecedingSalesVoucherID)
+	} else {
+		qb = qb.BodyJSON(o.Body)
 	}
 
 	err := qb.Fetch(ctx)
@@ -164,4 +186,33 @@ func (c *Client) CreateInvoice(ctx context.Context, body InvoiceBody, finalize b
 	}
 
 	return ir, nil
+}
+
+type RenderResponse struct {
+	ID string `json:"documentFileId,omitempty"`
+}
+
+// RenderInvoicePDF is to render a invoice as pdf
+// <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-render-an-invoice-document-pdf>
+func (c *Client) RenderInvoicePDF(ctx context.Context, invoiceID string) (RenderResponse, error) {
+	var df RenderResponse
+	var er ErrorResponse
+	err := c.Requestf("/v1/invoices/%s/document", invoiceID).ToJSON(&df).ErrorJSON(&er).Fetch(ctx)
+	if err != nil {
+		return RenderResponse{}, fmt.Errorf("error getting document file id (%s): %w", er.String(), err)
+	}
+
+	return RenderResponse{}, nil
+}
+
+// DeeplinkInvoiceURL is to get the deeplink url for a invoice
+// <https://developers.lexoffice.io/docs/?shell#invoices-endpoint-deeplink-to-an-invoice>
+func (c *Client) DeeplinkInvoiceURL(ctx context.Context, invoiceID string, edit bool) (string, error) {
+	arg := "view"
+	if edit {
+		arg = "edit"
+	}
+
+	p, _ := url.JoinPath(c.baseUrl, "/permalink/invoices", arg, invoiceID)
+	return p, nil
 }

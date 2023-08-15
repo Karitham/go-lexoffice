@@ -21,7 +21,7 @@ func TestErrorResponse(t *testing.T) {
 	config := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL))
 
 	t.Run("errors=legacy", func(t *testing.T) {
-		_, err := config.AddContact(context.Background(), lexoffice.ContactBody{
+		_, err := config.CreateContact(context.Background(), lexoffice.ContactBody{
 			Company: &lexoffice.ContactBodyCompany{
 				Name:              "company",
 				VatRegistrationId: "",
@@ -32,7 +32,7 @@ func TestErrorResponse(t *testing.T) {
 	})
 
 	t.Run("errors=new", func(t *testing.T) {
-		_, err := config.AddInvoice(context.Background(), lexoffice.InvoiceBody{})
+		_, err := config.CreateInvoice(context.Background(), lexoffice.CreateInvoiceOptions{})
 		assert.Error(t, err)
 	})
 

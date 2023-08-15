@@ -66,3 +66,11 @@ func (c *Client) Request(path string) *requests.Builder {
 		Accept("application/json").
 		Client(c.httpClient)
 }
+
+func (c *Client) Requestf(path string, args ...any) *requests.Builder {
+	return requests.
+		URL(c.baseUrl).
+		Pathf(path, args...).
+		Accept("application/json").
+		Client(c.httpClient)
+}

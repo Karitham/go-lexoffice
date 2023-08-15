@@ -12,22 +12,25 @@ package golexoffice
 import (
 	"context"
 	"fmt"
+	"strconv"
+
+	"github.com/aarondl/opt/omit"
 )
 
 // ContactsReturn is to decode json data
 type ContactsReturn struct {
-	Content          []ContactsReturnContent `json:"content"`
-	First            bool                    `json:"first"`
-	Last             bool                    `json:"last"`
-	TotalPages       int                     `json:"totalPages"`
-	TotalElements    int                     `json:"totalElements"`
-	NumberOfElements int                     `json:"numberOfElements"`
-	Size             int                     `json:"size"`
-	Number           int                     `json:"number"`
-	Sort             []ContactsReturnSort    `json:"sort"`
+	Content          []ContactsContent    `json:"content"`
+	First            bool                 `json:"first"`
+	Last             bool                 `json:"last"`
+	TotalPages       int                  `json:"totalPages"`
+	TotalElements    int                  `json:"totalElements"`
+	NumberOfElements int                  `json:"numberOfElements"`
+	Size             int                  `json:"size"`
+	Number           int                  `json:"number"`
+	Sort             []ContactsReturnSort `json:"sort"`
 }
 
-type ContactsReturnContent struct {
+type ContactsContent struct {
 	Id             string                    `json:"id,omitempty"`
 	Version        int                       `json:"version,omitempty"`
 	Roles          ContactBodyRoles          `json:"roles"`
@@ -200,8 +203,7 @@ type ContactBodyPhoneNumbers struct {
 	Other    []string `json:"other"`
 }
 
-// ContactReturn is to decode json return
-type ContactReturn struct {
+type ContactsResponse struct {
 	ID          string `json:"id"`
 	ResourceUri string `json:"resourceUri"`
 	CreatedDate string `json:"createdDate"`
@@ -209,71 +211,112 @@ type ContactReturn struct {
 	Version     int    `json:"version"`
 }
 
-// Contacts is to get a list of all contacts
-func (c *Client) Contacts(ctx context.Context) ([]ContactsReturnContent, error) {
-	var contacts []ContactsReturnContent
+type GetContactsParams struct {
+	Page   int
+	Email  string
+	Name   string
+	Number int
 
+	// filtering goes like this:
+	// 	- unspecified -> no filter
+	// 	- true -> only customer
+	// 	- false -> only non-customer
+	Customer omit.Val[bool]
+
+	// filtering goes like this:
+	// 	- unspecified -> no filter
+	// 	- true -> only vendor
+	// 	- false -> only non-vendor
+	Vendor omit.Val[bool]
+}
+
+// GetContacts is to get a list of all contacts
+// <https://developers.lexoffice.io/docs/?shell#contacts-endpoint-filtering-contacts>
+func (c *Client) GetContacts(ctx context.Context, p GetContactsParams) (ContactsReturn, error) {
 	var er LegacyErrorResponse
 	var cr ContactsReturn
-	for page := 0; page < cr.TotalPages; page++ {
-		err := c.Request(fmt.Sprintf("/v1/contacts?page=%d", page)).
-			ToJSON(&cr).
-			ErrorJSON(&er).
-			Fetch(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("error while get contacts: %s", err)
-		}
 
-		// Add contacts
-		contacts = append(contacts, cr.Content...)
+	qb := c.Request("/v1/contacts").
+		ToJSON(&cr).
+		ErrorJSON(&er)
+
+	if p.Page != 0 {
+		qb.ParamInt("page", p.Page)
 	}
 
-	// Return data
-	return contacts, nil
+	if p.Email != "" {
+		qb.Param("email", p.Email)
+	}
+
+	if p.Name != "" {
+		qb.Param("name", p.Name)
+	}
+
+	if p.Number != 0 {
+		qb.ParamInt("number", p.Number)
+	}
+
+	if p.Customer.IsSet() {
+		qb.Param("customer", strconv.FormatBool(p.Customer.GetOrZero()))
+	}
+
+	if p.Vendor.IsSet() {
+		qb.Param("vendor", strconv.FormatBool(p.Vendor.GetOrZero()))
+	}
+
+	err := qb.Fetch(ctx)
+	if err != nil {
+		return ContactsReturn{}, fmt.Errorf("error getting contacts (%s): %w", er.String(), err)
+	}
+
+	return cr, nil
 
 }
 
-// Contact is to get a contact by id
-func (c *Client) Contact(ctx context.Context, id string) (ContactsReturnContent, error) {
+// GetContact is to get a contact by id
+// <https://developers.lexoffice.io/docs/?shell#contacts-endpoint-retrieve-a-contact>
+func (c *Client) GetContact(ctx context.Context, id string) (ContactsContent, error) {
 	var er LegacyErrorResponse
-	var crc ContactsReturnContent
-	err := c.Request(fmt.Sprintf("/v1/contacts/%s", id)).ToJSON(&crc).ErrorJSON(&er).Fetch(ctx)
+	var crc ContactsContent
+	err := c.Requestf("/v1/contacts/%s", id).ToJSON(&crc).ErrorJSON(&er).Fetch(ctx)
 	if err != nil {
-		return crc, fmt.Errorf("error while get contact: %s", err)
+		return crc, fmt.Errorf("error getting contact (%s): %w", er.String(), err)
 	}
 	return crc, nil
 
 }
 
-// AddContact is to add a new contact
-func (c *Client) AddContact(ctx context.Context, body ContactBody) (ContactReturn, error) {
+// CreateContact creates a new contact
+// <https://developers.lexoffice.io/docs/?shell#contacts-endpoint-create-a-contact>
+func (c *Client) CreateContact(ctx context.Context, body ContactBody) (ContactsResponse, error) {
 	var er LegacyErrorResponse
-	var cr ContactReturn
-	err := c.Request("/v1/contacts/").
+	var cr ContactsResponse
+	err := c.Request("/v1/contacts").
 		BodyJSON(body).
 		ToJSON(&cr).
 		ErrorJSON(&er).
 		Post().
 		Fetch(ctx)
 	if err != nil {
-		return cr, fmt.Errorf("error while add contact: %s", err)
+		return cr, fmt.Errorf("error creating contacts (%s): %w", er.String(), err)
 	}
 
 	return cr, nil
 }
 
-// UpdateContact is to add a new contact
-func (c *Client) UpdateContact(body ContactBody) (ContactReturn, error) {
+// UpdateContact updates existing contact
+// <https://developers.lexoffice.io/docs/?shell#contacts-endpoint-update-a-contact>
+func (c *Client) UpdateContact(ctx context.Context, body ContactBody) (ContactsResponse, error) {
 	var er LegacyErrorResponse
-	var cr ContactReturn
-	err := c.Request("/v1/contacts/" + body.Id).
+	var cr ContactsResponse
+	err := c.Requestf("/v1/contacts/%s", body.Id).
 		BodyJSON(body).
 		ToJSON(&cr).
 		ErrorJSON(&er).
 		Put().
-		Fetch(context.Background())
+		Fetch(ctx)
 	if err != nil {
-		return cr, err
+		return cr, fmt.Errorf("error updating contacts (%s): %w", er.String(), err)
 	}
 
 	return cr, nil
