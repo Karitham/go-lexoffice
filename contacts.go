@@ -212,10 +212,10 @@ type ContactsResponse struct {
 }
 
 type GetContactsParams struct {
-	Page   int
-	Email  string
-	Name   string
-	Number int
+	Page   omit.Val[int]
+	Email  omit.Val[string]
+	Name   omit.Val[string]
+	Number omit.Val[int]
 
 	// filtering goes like this:
 	// 	- unspecified -> no filter
@@ -240,20 +240,20 @@ func (c *Client) GetContacts(ctx context.Context, p GetContactsParams) (Contacts
 		ToJSON(&cr).
 		ErrorJSON(&er)
 
-	if p.Page != 0 {
-		qb.ParamInt("page", p.Page)
+	if p.Page.IsSet() {
+		qb.ParamInt("page", p.Page.MustGet())
 	}
 
-	if p.Email != "" {
-		qb.Param("email", p.Email)
+	if p.Page.IsSet() {
+		qb.Param("email", p.Email.MustGet())
 	}
 
-	if p.Name != "" {
-		qb.Param("name", p.Name)
+	if p.Page.IsSet() {
+		qb.Param("name", p.Name.MustGet())
 	}
 
-	if p.Number != 0 {
-		qb.ParamInt("number", p.Number)
+	if p.Page.IsSet() {
+		qb.ParamInt("number", p.Number.MustGet())
 	}
 
 	if p.Customer.IsSet() {
