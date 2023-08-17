@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	lexoffice "github.com/karitham/go-lexoffice"
 	"github.com/stretchr/testify/assert"
@@ -143,4 +144,34 @@ func lexOfficeMock() *httptest.Server {
 		//nolint:errcheck
 		w.Write([]byte(fmt.Sprintf("not found (%s): %s", r.Method, r.RequestURI)))
 	}))
+}
+
+func TestLimiter(t *testing.T) {
+	server := lexOfficeMock()
+	defer server.Close()
+
+	c := lexoffice.NewClient("api-key", lexoffice.WithBaseUrl(server.URL), lexoffice.WithRate(2))
+	ctx := context.Background()
+
+	start := time.Now()
+
+	_, err := c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+	_, err = c.GetContact(ctx, "c73d5f78-847e-49d8-aa58-c6d95c5c9cb5")
+	assert.NoError(t, err)
+
+	elapsed := time.Since(start)
+	assert.GreaterOrEqual(t, elapsed.Milliseconds(), time.Second.Milliseconds()*3) // should be AT LEAST 3.5 seconds
 }

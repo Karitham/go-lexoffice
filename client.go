@@ -11,9 +11,11 @@ package golexoffice
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/carlmjohnson/requests"
 	"golang.org/x/oauth2"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -26,6 +28,8 @@ type Client struct {
 
 	// httpClient is the client used to make HTTP requests.
 	httpClient *http.Client
+
+	rate *rate.Limiter
 }
 
 func WithClient(client *http.Client) func(*Client) {
@@ -37,6 +41,12 @@ func WithClient(client *http.Client) func(*Client) {
 func WithBaseUrl(baseUrl string) func(*Client) {
 	return func(c *Client) {
 		c.baseUrl = baseUrl
+	}
+}
+
+func WithRate(opPerSecond int) func(*Client) {
+	return func(c *Client) {
+		c.rate = rate.NewLimiter(rate.Every(time.Second/time.Duration(opPerSecond)), 1)
 	}
 }
 
@@ -56,6 +66,14 @@ func NewClient(token string, o ...func(*Client)) *Client {
 		Base:   client.httpClient.Transport,
 	}
 
+	// if rate is set, wrap transport with a rate limiter
+	if client.rate != nil {
+		client.httpClient.Transport = rateTransport{
+			limiter: client.rate,
+			base:    client.httpClient.Transport,
+		}
+	}
+
 	return client
 }
 
@@ -73,4 +91,16 @@ func (c *Client) Requestf(path string, args ...any) *requests.Builder {
 		Pathf(path, args...).
 		Accept("application/json").
 		Client(c.httpClient)
+}
+
+type rateTransport struct {
+	limiter *rate.Limiter
+	base    http.RoundTripper
+}
+
+func (t rateTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if err := t.limiter.Wait(req.Context()); err != nil {
+		return nil, err
+	}
+	return t.base.RoundTrip(req)
 }
