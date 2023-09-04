@@ -22,6 +22,13 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type LanguageOption string
+
+const (
+	LanguageOptionEN LanguageOption = "en"
+	LanguageOptionDE LanguageOption = "de"
+)
+
 const DateFormat = "2006-01-02T15:04:05.000-07:00"
 
 type Date time.Time
@@ -61,6 +68,7 @@ type InvoiceBody struct {
 	ShippingConditions InvoiceBodyShippingConditions `json:"shippingConditions,omitempty"`
 	Title              string                        `json:"title,omitempty"`
 	Introduction       string                        `json:"introduction,omitempty"`
+	Language           LanguageOption                `json:"language,omitempty"`
 	Remark             string                        `json:"remark,omitempty"`
 	Files              InvoiceBodyFiles              `json:"files,omitempty"`
 }
@@ -99,13 +107,13 @@ type InvoiceBodyUnitPrice struct {
 }
 
 type InvoiceBodyTotalPrice struct {
-	Currency                string          `json:"currency,omitempty"`
-	TotalNetAmount          decimal.Decimal `json:"totalNetAmount,omitempty"`
-	TotalGrossAmount        decimal.Decimal `json:"totalGrossAmount,omitempty"`
-	TaxRatePercentage       float64         `json:"taxRatePercentage,omitempty"`
-	TotalTaxAmount          decimal.Decimal `json:"totalTaxAmount,omitempty"`
-	TotalDiscountAbsolute   decimal.Decimal `json:"totalDiscountAbsolute,omitempty"`
-	TotalDiscountPercentage float64         `json:"totalDiscountPercentage,omitempty"`
+	Currency                string                    `json:"currency,omitempty"`
+	TotalNetAmount          decimal.Decimal           `json:"totalNetAmount,omitempty"`
+	TotalGrossAmount        decimal.Decimal           `json:"totalGrossAmount,omitempty"`
+	TaxRatePercentage       float64                   `json:"taxRatePercentage,omitempty"`
+	TotalTaxAmount          decimal.Decimal           `json:"totalTaxAmount,omitempty"`
+	TotalDiscountAbsolute   omit.Val[decimal.Decimal] `json:"totalDiscountAbsolute,omitempty"`
+	TotalDiscountPercentage omit.Val[float64]         `json:"totalDiscountPercentage,omitempty"`
 }
 
 type InvoiceBodyTaxAmounts struct {
